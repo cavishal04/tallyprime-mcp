@@ -1,0 +1,76 @@
+[build-system]
+requires = ["hatchling>=1.21.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tallyprime-mcp"
+version = "0.1.0"
+description = "An MCP server that lets AI assistants securely read data from a local TallyPrime installation."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "TallyPrime MCP Contributors" }
+]
+keywords = ["tally", "tallyprime", "mcp", "model-context-protocol", "accounting", "erp"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial :: Accounting",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "mcp>=1.2.0,<2.0.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
+    "defusedxml>=0.7.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "respx>=0.20.0",
+    "ruff>=0.4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/cavishal04/tallyprime-mcp"
+Repository = "https://github.com/cavishal04/tallyprime-mcp"
+Issues = "https://github.com/cavishal04/tallyprime-mcp/issues"
+Documentation = "https://github.com/cavishal04/tallyprime-mcp/tree/main/docs"
+Changelog = "https://github.com/cavishal04/tallyprime-mcp/blob/main/CHANGELOG.md"
+
+[project.scripts]
+tallyprime-mcp = "tallyprime_mcp.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tallyprime_mcp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.coverage.run]
+source = ["src/tallyprime_mcp"]
