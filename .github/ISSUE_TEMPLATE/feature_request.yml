@@ -1,0 +1,27 @@
+name: Feature request
+description: Suggest a new tool, report, or capability
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: What are you trying to do that isn't currently possible?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: A new tool? A new parameter on an existing tool? Something else?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: tally-access
+    attributes:
+      label: Real TallyPrime access
+      description: This project's maintainers don't have a licensed TallyPrime installation available — see README "Testing".
+      options:
+        - label: I have access to a real TallyPrime installation and could help verify the XML shape for this.

@@ -1,0 +1,75 @@
+name: Bug report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! If this is a field-name
+        mismatch against a real TallyPrime installation, that's especially
+        useful — please include your TallyPrime version below.
+
+  - type: input
+    id: tallyprime-mcp-version
+    attributes:
+      label: TallyPrime MCP version
+      placeholder: "0.1.0 (run `tallyprime-mcp --version`)"
+    validations:
+      required: true
+
+  - type: input
+    id: tallyprime-version
+    attributes:
+      label: TallyPrime version
+      description: Help > About in TallyPrime
+      placeholder: e.g. TallyPrime 5.1
+    validations:
+      required: false
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      placeholder: "run `python --version`"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Which tool did you call, with what parameters?
+      placeholder: |
+        1. Call `get_ledger` with ledger_name="HDFC Bank"
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Run with `TALLY_LOG_LEVEL=DEBUG` for more detail. Please redact any real account names/numbers/amounts before pasting.
+      render: shell
+    validations:
+      required: false
