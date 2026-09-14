@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "tallyprime": {
+      "command": "tallyprime-mcp",
+      "args": [],
+      "env": {
+        "TALLY_HOST": "127.0.0.1",
+        "TALLY_PORT": "9000"
+      }
+    }
+  }
+}
