@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- MOCK FIXTURE — NOT a captured response from a real TallyPrime instance. -->
+<ENVELOPE>
+  <LINEERROR>Could not set "MCPUnknownCollection" : Unknown collection or report name</LINEERROR>
+</ENVELOPE>

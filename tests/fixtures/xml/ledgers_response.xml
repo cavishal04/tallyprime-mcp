@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- MOCK FIXTURE — NOT a captured response from a real TallyPrime instance. -->
+<ENVELOPE>
+  <BODY>
+    <DATA>
+      <COLLECTION>
+        <LEDGER NAME="HDFC Bank">
+          <NAME>HDFC Bank</NAME>
+          <PARENT>Bank Accounts</PARENT>
+          <OPENINGBALANCE>1250000</OPENINGBALANCE>
+          <CLOSINGBALANCE>1375000</CLOSINGBALANCE>
+        </LEDGER>
+        <LEDGER NAME="ABC Limited">
+          <NAME>ABC Limited</NAME>
+          <PARENT>Sundry Debtors</PARENT>
+          <OPENINGBALANCE>500000</OPENINGBALANCE>
+          <CLOSINGBALANCE>250000</CLOSINGBALANCE>
+        </LEDGER>
+        <LEDGER NAME="Prime Supplies Co">
+          <NAME>Prime Supplies Co</NAME>
+          <PARENT>Sundry Creditors</PARENT>
+          <OPENINGBALANCE>-100000</OPENINGBALANCE>
+          <CLOSINGBALANCE>-180000</CLOSINGBALANCE>
+        </LEDGER>
+        <LEDGER NAME="Sales Revenue">
+          <NAME>Sales Revenue</NAME>
+          <PARENT>Sales Accounts</PARENT>
+          <OPENINGBALANCE>0</OPENINGBALANCE>
+          <CLOSINGBALANCE>-2500000</CLOSINGBALANCE>
+        </LEDGER>
+        <LEDGER NAME="Office Rent">
+          <NAME>Office Rent</NAME>
+          <PARENT>Indirect Expenses</PARENT>
+          <OPENINGBALANCE>0</OPENINGBALANCE>
+          <CLOSINGBALANCE>360000</CLOSINGBALANCE>
+        </LEDGER>
+        <LEDGER NAME="Capital Account">
+          <NAME>Capital Account</NAME>
+          <PARENT>Capital Account</PARENT>
+          <OPENINGBALANCE>-150000</OPENINGBALANCE>
+          <CLOSINGBALANCE>-150000</CLOSINGBALANCE>
+        </LEDGER>
+        <LEDGER NAME="Furniture and Fixtures">
+          <NAME>Furniture and Fixtures</NAME>
+          <PARENT>Fixed Assets</PARENT>
+          <OPENINGBALANCE>800000</OPENINGBALANCE>
+          <CLOSINGBALANCE>800000</CLOSINGBALANCE>
+        </LEDGER>
+        <LEDGER NAME="Cash">
+          <NAME>Cash</NAME>
+          <PARENT>Cash-in-Hand</PARENT>
+          <OPENINGBALANCE>50000</OPENINGBALANCE>
+          <CLOSINGBALANCE>45000</CLOSINGBALANCE>
+        </LEDGER>
+      </COLLECTION>
+    </DATA>
+  </BODY>
+</ENVELOPE>

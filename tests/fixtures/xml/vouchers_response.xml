@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- MOCK FIXTURE — NOT a captured response from a real TallyPrime instance. -->
+<ENVELOPE>
+  <BODY>
+    <DATA>
+      <COLLECTION>
+        <VOUCHER>
+          <DATE>20260901</DATE>
+          <VOUCHERNUMBER>RV-001</VOUCHERNUMBER>
+          <VOUCHERTYPENAME>Receipt</VOUCHERTYPENAME>
+          <PARTYLEDGERNAME>ABC Limited</PARTYLEDGERNAME>
+          <NARRATION>Payment received</NARRATION>
+          <AMOUNT>250000</AMOUNT>
+        </VOUCHER>
+        <VOUCHER>
+          <DATE>20260903</DATE>
+          <VOUCHERNUMBER>PV-014</VOUCHERNUMBER>
+          <VOUCHERTYPENAME>Payment</VOUCHERTYPENAME>
+          <PARTYLEDGERNAME>Prime Supplies Co</PARTYLEDGERNAME>
+          <NARRATION>Supplier payment</NARRATION>
+          <AMOUNT>-180000</AMOUNT>
+        </VOUCHER>
+        <VOUCHER>
+          <DATE>20260905</DATE>
+          <VOUCHERNUMBER>SA-102</VOUCHERNUMBER>
+          <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
+          <PARTYLEDGERNAME>ABC Limited</PARTYLEDGERNAME>
+          <NARRATION>Invoice for Sept goods</NARRATION>
+          <AMOUNT>-95000</AMOUNT>
+        </VOUCHER>
+      </COLLECTION>
+    </DATA>
+  </BODY>
+</ENVELOPE>

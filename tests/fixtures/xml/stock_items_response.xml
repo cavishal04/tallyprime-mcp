@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- MOCK FIXTURE — NOT a captured response from a real TallyPrime instance. -->
+<ENVELOPE>
+  <BODY>
+    <DATA>
+      <COLLECTION>
+        <STOCKITEM NAME="Widget A">
+          <NAME>Widget A</NAME>
+          <PARENT>Finished Goods</PARENT>
+          <BASEUNITS>Nos</BASEUNITS>
+          <OPENINGBALANCE>100</OPENINGBALANCE>
+          <OPENINGVALUE>50000</OPENINGVALUE>
+          <CLOSINGBALANCE>60</CLOSINGBALANCE>
+          <CLOSINGVALUE>30000</CLOSINGVALUE>
+        </STOCKITEM>
+        <STOCKITEM NAME="Widget B">
+          <NAME>Widget B</NAME>
+          <PARENT>Finished Goods</PARENT>
+          <BASEUNITS>Nos</BASEUNITS>
+          <OPENINGBALANCE>200</OPENINGBALANCE>
+          <OPENINGVALUE>120000</OPENINGVALUE>
+          <CLOSINGBALANCE>150</CLOSINGBALANCE>
+          <CLOSINGVALUE>90000</CLOSINGVALUE>
+        </STOCKITEM>
+      </COLLECTION>
+    </DATA>
+  </BODY>
+</ENVELOPE>

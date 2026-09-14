@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- MOCK FIXTURE — NOT a captured response from a real TallyPrime instance. -->
+<ENVELOPE>
+  <BODY>
+    <DATA>
+      <COLLECTION>
+        <GROUP NAME="Bank Accounts"><NAME>Bank Accounts</NAME><PARENT>Current Assets</PARENT></GROUP>
+        <GROUP NAME="Sundry Debtors"><NAME>Sundry Debtors</NAME><PARENT>Current Assets</PARENT></GROUP>
+        <GROUP NAME="Sundry Creditors"><NAME>Sundry Creditors</NAME><PARENT>Current Liabilities</PARENT></GROUP>
+        <GROUP NAME="Cash-in-Hand"><NAME>Cash-in-Hand</NAME><PARENT>Current Assets</PARENT></GROUP>
+        <GROUP NAME="Current Assets"><NAME>Current Assets</NAME><PARENT></PARENT></GROUP>
+        <GROUP NAME="Current Liabilities"><NAME>Current Liabilities</NAME><PARENT></PARENT></GROUP>
+        <GROUP NAME="Sales Accounts"><NAME>Sales Accounts</NAME><PARENT></PARENT></GROUP>
+        <GROUP NAME="Indirect Expenses"><NAME>Indirect Expenses</NAME><PARENT></PARENT></GROUP>
+        <GROUP NAME="Capital Account"><NAME>Capital Account</NAME><PARENT></PARENT></GROUP>
+        <GROUP NAME="Fixed Assets"><NAME>Fixed Assets</NAME><PARENT></PARENT></GROUP>
+      </COLLECTION>
+    </DATA>
+  </BODY>
+</ENVELOPE>
