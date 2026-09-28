@@ -9,6 +9,8 @@ for locally-run servers).
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from tallyprime_mcp import __version__
 from tallyprime_mcp.config import TallySettings, load_settings
 from tallyprime_mcp.logging_config import configure_logging, get_logger
@@ -16,6 +18,9 @@ from tallyprime_mcp.mcp.prompts import register_prompts
 from tallyprime_mcp.mcp.resources import register_resources
 from tallyprime_mcp.mcp.tools import register_tools
 from tallyprime_mcp.tally.client import TallyClient
+
+if TYPE_CHECKING:
+    from mcp.server.fastmcp import FastMCP
 
 logger = get_logger("server")
 
@@ -35,7 +40,7 @@ TallyPrime MCP gives you read-only access to a local TallyPrime installation.
 """
 
 
-def build_server(settings: TallySettings | None = None) -> tuple["FastMCP", TallyClient]:  # noqa: F821
+def build_server(settings: TallySettings | None = None) -> tuple[FastMCP, TallyClient]:
     """Construct (but do not run) the FastMCP app and its backing TallyClient.
 
     Split out from :func:`main` so tests can build a server against an
