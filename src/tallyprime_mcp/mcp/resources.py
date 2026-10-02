@@ -1,8 +1,8 @@
 """Read-only MCP resources exposed by the TallyPrime MCP server.
 
 Resources are for context an AI client might want to load ambiently (e.g.
-"what companies exist") without an explicit tool call. They carry the same
-read-only guarantee as the tools in :mod:`tallyprime_mcp.mcp.tools`.
+"what companies exist") without an explicit tool call. Resources are always
+read-only, even when write tools are enabled.
 """
 
 from __future__ import annotations

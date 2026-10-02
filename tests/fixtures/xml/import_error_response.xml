@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- MOCK FIXTURE — NOT a captured response from a real TallyPrime instance. -->
+<ENVELOPE>
+  <HEADER><VERSION>1</VERSION><STATUS>1</STATUS></HEADER>
+  <BODY>
+    <DATA>
+      <IMPORTRESULT>
+        <CREATED>0</CREATED>
+        <ALTERED>0</ALTERED>
+        <ERRORS>1</ERRORS>
+        <EXCEPTIONS>0</EXCEPTIONS>
+        <LINEERROR>Voucher totals do not match!</LINEERROR>
+      </IMPORTRESULT>
+    </DATA>
+  </BODY>
+</ENVELOPE>

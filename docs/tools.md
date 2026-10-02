@@ -1,7 +1,8 @@
 # Tools Reference
 
-All tools are **read-only**. None can create, modify, or delete anything in
-TallyPrime. Dates are always ISO format `YYYY-MM-DD`. `company` is optional
+All tools below are **read-only** unless listed under
+[Write tools](#write-tools-opt-in), which only exist when
+`TALLY_READ_ONLY=false`. Dates are always ISO format `YYYY-MM-DD`. `company` is optional
 on every tool if `TALLY_DEFAULT_COMPANY` is configured; otherwise it's
 required (call `list_companies` first if you don't know the exact name).
 
@@ -155,3 +156,52 @@ means a voucher will only show up in a ledger's statement if that ledger
 is recorded as the voucher's `PARTYLEDGERNAME` — multi-ledger journal
 entries that touch a ledger without it being the "party" may not appear.
 This is a known gap tracked for improvement.
+
+## Write tools (opt-in)
+
+Registered only when `TALLY_READ_ONLY=false`. Every write is two-step:
+`create_*` returns a preview and writes nothing; `confirm_write` performs
+it. Writes require an explicit company (`company` or
+`TALLY_DEFAULT_COMPANY`), which must be loaded in TallyPrime.
+
+### create_ledger
+
+**Parameters:** `name`, `parent_group`, `company`, `opening_balance`
+(optional, positive), `opening_balance_side` (`"debit"` | `"credit"`,
+default `"debit"`).
+
+Rejected if the ledger already exists or the group doesn't.
+
+### create_voucher
+
+**Parameters:** `voucher_type` (e.g. `"Payment"`, `"Receipt"`, `"Journal"`,
+`"Contra"`, `"Sales"`, `"Purchase"`), `date` (`YYYY-MM-DD`), `entries`
+(two or more `{ledger, side, amount}`), `company`, `narration`,
+`voucher_number`, `reference`, `party_ledger` — all optional except the
+first three.
+
+Debits must equal credits, and every ledger must already exist. Vouchers
+are created in Accounting Voucher View; inventory lines (stock items,
+quantities, rates) aren't supported yet.
+
+### Preview response
+
+`{confirmation_id, operation, company, summary, details, expires_at, status: "pending_confirmation", next_step}`
+
+### confirm_write
+
+**Parameters:** `confirmation_id`.
+
+**Returns:** `{confirmation_id, operation, company, status: "committed", summary, created, altered, tally_voucher_id, tally_master_id}`.
+Fails with Tally's own error text (e.g. an unknown voucher type) if Tally
+rejects the import. Each id works once and expires after
+`TALLY_WRITE_CONFIRMATION_TTL_SECONDS`.
+
+### cancel_write
+
+**Parameters:** `confirmation_id`. Discards the proposal; nothing is sent.
+
+> **Verify against a live instance:** the import XML follows Tally's
+> documented `Import Data` format (debits as negative `AMOUNT` with
+> `ISDEEMEDPOSITIVE=Yes`), but like the read side it hasn't yet been run
+> against a real TallyPrime. Try it on a test company first.

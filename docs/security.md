@@ -30,11 +30,12 @@ query it from elsewhere on your LAN):
 
 ## What to check if you're reviewing this project for use in your organization
 
-- **No write capability exists.** Confirm this yourself: search the
-  codebase for tool names starting with `create_`, `update_`, or
-  `delete_` — there are none registered in `mcp/tools.py`, and
-  `security/permissions.py`'s `WritePermission.check()` always returns
-  `allowed=False`.
+- **Writes are off unless you turn them on.** With the default
+  `TALLY_READ_ONLY=true`, `_register_write_tools` in `mcp/tools.py` is never
+  called and `WritePermission.check()` denies everything. With writes on,
+  only `create_ledger`/`create_voucher` exist (no `update_`/`delete_`), and
+  each must be followed by `confirm_write` — see
+  [SECURITY.md](../SECURITY.md#write-operations--opt-in-two-step).
 - **No network calls beyond TallyPrime.** The only outbound HTTP calls in
   this codebase are in `tally/connection.py`, targeting the configured
   `TALLY_HOST:TALLY_PORT`. There's no telemetry, update-checker, or

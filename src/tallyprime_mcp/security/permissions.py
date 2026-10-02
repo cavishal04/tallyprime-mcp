@@ -1,24 +1,23 @@
 """Permission gate for Tally *write* operations.
 
-Nothing in this release calls this module for anything, because no write
-tool is registered (see ``docs/security.md`` and ``README.md#roadmap``).
-It exists now so the intended future workflow is concrete and reviewable
-rather than a paragraph of prose:
+Every write goes through this flow:
 
-    AI requests a write (e.g. create_payment)
+    AI proposes a write (e.g. create_voucher)
         -> WritePermission.check() must return allowed=True
-        -> the proposed transaction is shown to the user (not executed)
-        -> the user explicitly confirms (security.confirmation)
-        -> only then does a (not-yet-implemented) write path call Tally
+        -> the proposed change is validated and returned as a preview,
+           NOT executed (security.confirmation stores it)
+        -> the user explicitly approves; confirm_write(confirmation_id)
+        -> WritePermission.check() is consulted again, then Tally is called
         -> the outcome is recorded via security.audit
 
-Design intent for the eventual write tools:
+Design rules:
 
 * ``TallySettings.read_only`` must be ``False`` (never the default).
-* Each write tool declares the minimum fields it needs; extra/unknown
-  fields are rejected rather than passed through.
-* A generic "run this Tally XML" escape hatch is never provided — see
-  README "Roadmap" for why.
+* Only the operations in :data:`WRITE_OPERATIONS` can ever be allowed.
+  Each declares the minimum fields it needs; extra/unknown fields are
+  rejected rather than passed through.
+* A generic "run this Tally XML" escape hatch is never provided.
+* Nothing alters or deletes existing Tally data — only creation is supported.
 """
 
 from __future__ import annotations
@@ -26,6 +25,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from tallyprime_mcp.config import TallySettings
+
+WRITE_OPERATIONS = frozenset({"create_ledger", "create_voucher"})
 
 
 @dataclass(frozen=True)
@@ -35,10 +36,7 @@ class PermissionResult:
 
 
 class WritePermission:
-    """Gate that every future write operation must consult before touching
-    Tally. In this release it always denies, because no write capability
-    has shipped yet — this is intentional, not a placeholder bug.
-    """
+    """Gate that every write operation must consult before touching Tally."""
 
     def __init__(self, settings: TallySettings) -> None:
         self._settings = settings
@@ -48,15 +46,13 @@ class WritePermission:
             return PermissionResult(
                 allowed=False,
                 reason=(
-                    f"'{operation}' is a write operation. TallyPrime MCP v0.1 is "
-                    "read-only by design and does not implement any write operations "
-                    "yet, regardless of TALLY_READ_ONLY. See the project roadmap."
+                    f"'{operation}' is a write operation, and this server is running in "
+                    "read-only mode. Set TALLY_READ_ONLY=false to enable writes."
                 ),
             )
-        # No write operations are implemented in this release even if a
-        # future config flag flips read_only to False; this branch is a
-        # deliberate hard stop, not a bypass.
-        return PermissionResult(
-            allowed=False,
-            reason=f"'{operation}' is not implemented in this release.",
-        )
+        if operation not in WRITE_OPERATIONS:
+            return PermissionResult(
+                allowed=False,
+                reason=f"'{operation}' is not a supported write operation.",
+            )
+        return PermissionResult(allowed=True, reason="")

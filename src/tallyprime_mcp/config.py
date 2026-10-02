@@ -70,8 +70,17 @@ class TallySettings(BaseSettings):
     # --- Safety -----------------------------------------------------------
     read_only: bool = Field(
         default=True,
-        description="When true (the default and, in this release, the only supported mode), "
-        "no MCP tool that could modify TallyPrime data is registered or callable.",
+        description="When true (the default), no MCP tool that could modify TallyPrime data "
+        "is registered or callable. Set to false to register the write tools (create_ledger, "
+        "create_voucher, confirm_write, cancel_write); every write still requires a separate, "
+        "explicit confirmation step before anything is sent to Tally.",
+    )
+    write_confirmation_ttl_seconds: int = Field(
+        default=600,
+        gt=0,
+        le=3600,
+        description="How long, in seconds, a proposed write stays confirmable before it "
+        "expires and must be proposed again.",
     )
 
     # --- Request limits (defence in depth) --------------------------------

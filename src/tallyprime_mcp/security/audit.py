@@ -34,3 +34,10 @@ def log_connection_attempt(*, ok: bool, detail: str = "") -> None:
 
 def log_permission_denied(operation: str, reason: str) -> None:
     _audit_logger.warning(f"permission_denied: {operation}: {reason}")
+
+
+def log_write(operation: str, *, company: str, confirmation_id: str, outcome: str, detail: str = "") -> None:
+    _audit_logger.warning(
+        f"write_{outcome}: {operation} company={company!r} confirmation_id={confirmation_id}"
+        + (f": {detail}" if detail else ""),
+    )

@@ -53,6 +53,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
+from decimal import Decimal
 from xml.etree.ElementTree import Element, SubElement, tostring
 
 _XML_VERSION_HEADER = "1"
@@ -179,6 +180,117 @@ def build_connection_check_request() -> bytes:
         native_type="Company",
         fetch_fields=["NAME"],
     )
+
+
+# -- import (write) requests ---------------------------------------------------
+#
+# Writes use Tally's documented "Import Data" envelope:
+#
+#     <ENVELOPE>
+#       <HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER>
+#       <BODY><IMPORTDATA>
+#         <REQUESTDESC>
+#           <REPORTNAME>All Masters | Vouchers</REPORTNAME>
+#           <STATICVARIABLES><SVCURRENTCOMPANY>...</SVCURRENTCOMPANY></STATICVARIABLES>
+#         </REQUESTDESC>
+#         <REQUESTDATA><TALLYMESSAGE>...objects...</TALLYMESSAGE></REQUESTDATA>
+#       </IMPORTDATA></BODY>
+#     </ENVELOPE>
+#
+# Amount sign convention for imported ledger entries and opening balances:
+# debits are sent as negative AMOUNTs with ISDEEMEDPOSITIVE=Yes, credits as
+# positive AMOUNTs with ISDEEMEDPOSITIVE=No. Callers pass positive amounts
+# plus an explicit side; the sign is applied here and nowhere else.
+
+DEBIT = "debit"
+CREDIT = "credit"
+
+
+def _signed_amount(amount: Decimal, side: str) -> str:
+    if side not in {DEBIT, CREDIT}:
+        raise ValueError(f"side must be {DEBIT!r} or {CREDIT!r}")
+    signed = -amount if side == DEBIT else amount
+    return f"{signed:.2f}"
+
+
+def build_import_request(report_name: str, company: str, objects: list[Element]) -> bytes:
+    """Build an ``Import Data`` request carrying ``objects`` (``LEDGER`` /
+    ``VOUCHER`` elements) into ``company``. ``report_name`` is ``"All Masters"``
+    for masters or ``"Vouchers"`` for transactions."""
+    envelope = Element("ENVELOPE")
+    header = SubElement(envelope, "HEADER")
+    SubElement(header, "TALLYREQUEST").text = "Import Data"
+    import_data = SubElement(SubElement(envelope, "BODY"), "IMPORTDATA")
+    request_desc = SubElement(import_data, "REQUESTDESC")
+    SubElement(request_desc, "REPORTNAME").text = report_name
+    static_vars = SubElement(request_desc, "STATICVARIABLES")
+    SubElement(static_vars, "SVCURRENTCOMPANY").text = company
+    message = SubElement(SubElement(import_data, "REQUESTDATA"), "TALLYMESSAGE")
+    for obj in objects:
+        message.append(obj)
+    return _serialize(envelope)
+
+
+def build_ledger_element(
+    name: str,
+    parent_group: str,
+    opening_balance: Decimal | None = None,
+    opening_balance_side: str = DEBIT,
+) -> Element:
+    """A ``LEDGER`` master element with ``ACTION="Create"``."""
+    ledger = Element("LEDGER", attrib={"NAME": name, "ACTION": "Create"})
+    SubElement(SubElement(ledger, "NAME.LIST"), "NAME").text = name
+    SubElement(ledger, "PARENT").text = parent_group
+    if opening_balance:
+        SubElement(ledger, "OPENINGBALANCE").text = _signed_amount(
+            opening_balance, opening_balance_side
+        )
+    return ledger
+
+
+@dataclass(frozen=True)
+class LedgerEntryLine:
+    ledger: str
+    amount: Decimal
+    side: str
+
+
+def build_voucher_element(
+    voucher_type: str,
+    voucher_date: date,
+    entries: list[LedgerEntryLine],
+    *,
+    narration: str | None = None,
+    voucher_number: str | None = None,
+    reference: str | None = None,
+    party_ledger: str | None = None,
+) -> Element:
+    """An accounting-view ``VOUCHER`` element with ``ACTION="Create"``."""
+    voucher = Element(
+        "VOUCHER",
+        attrib={
+            "VCHTYPE": voucher_type,
+            "ACTION": "Create",
+            "OBJVIEW": "Accounting Voucher View",
+        },
+    )
+    SubElement(voucher, "DATE").text = format_tally_date(voucher_date)
+    SubElement(voucher, "VOUCHERTYPENAME").text = voucher_type
+    SubElement(voucher, "PERSISTEDVIEW").text = "Accounting Voucher View"
+    if voucher_number:
+        SubElement(voucher, "VOUCHERNUMBER").text = voucher_number
+    if reference:
+        SubElement(voucher, "REFERENCE").text = reference
+    if party_ledger:
+        SubElement(voucher, "PARTYLEDGERNAME").text = party_ledger
+    if narration:
+        SubElement(voucher, "NARRATION").text = narration
+    for entry in entries:
+        line = SubElement(voucher, "ALLLEDGERENTRIES.LIST")
+        SubElement(line, "LEDGERNAME").text = entry.ledger
+        SubElement(line, "ISDEEMEDPOSITIVE").text = "Yes" if entry.side == DEBIT else "No"
+        SubElement(line, "AMOUNT").text = _signed_amount(entry.amount, entry.side)
+    return voucher
 
 
 def _serialize(envelope: Element) -> bytes:

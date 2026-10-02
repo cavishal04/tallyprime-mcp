@@ -191,3 +191,80 @@ def field_amount(record: TallyRecord, *candidates: str) -> float:
         raise TallyXMLParseError(
             f"Could not parse Tally amount field {raw!r} as a number.",
         ) from exc
+
+
+@dataclass
+class ImportResult:
+    """Counters from TallyPrime's response to an ``Import Data`` request."""
+
+    created: int = 0
+    altered: int = 0
+    deleted: int = 0
+    ignored: int = 0
+    combined: int = 0
+    cancelled: int = 0
+    errors: int = 0
+    exceptions: int = 0
+    last_voucher_id: str | None = None
+    last_master_id: str | None = None
+
+
+_IMPORT_COUNTERS = {
+    "CREATED": "created",
+    "ALTERED": "altered",
+    "DELETED": "deleted",
+    "IGNORED": "ignored",
+    "COMBINED": "combined",
+    "CANCELLED": "cancelled",
+    "ERRORS": "errors",
+    "EXCEPTIONS": "exceptions",
+}
+
+
+def parse_import_result(root: Element) -> ImportResult:
+    """Interpret TallyPrime's response to an ``Import Data`` request.
+
+    Tally reports import outcomes as counters (``CREATED``, ``ERRORS``, ...)
+    plus optional ``LINEERROR`` messages. Depending on version these sit
+    under a bare ``<RESPONSE>`` root or under ``ENVELOPE/BODY/DATA/IMPORTRESULT``,
+    so — as with :func:`extract_records` — the whole tree is searched.
+
+    Raises :class:`TallyRequestError` if Tally reported any error, or if it
+    accepted the request but created/altered nothing.
+    """
+    result = ImportResult()
+    line_errors: list[str] = []
+    saw_counter = False
+    for elem in root.iter():
+        tag = elem.tag.upper()
+        text = (elem.text or "").strip()
+        if tag in _IMPORT_COUNTERS:
+            saw_counter = True
+            try:
+                setattr(result, _IMPORT_COUNTERS[tag], int(text or 0))
+            except ValueError as exc:
+                raise TallyXMLParseError(f"Unexpected {tag} value {text!r} in import response.") from exc
+        elif tag == "LASTVCHID" and text:
+            result.last_voucher_id = text
+        elif tag == "LASTMID" and text:
+            result.last_master_id = text
+        elif tag == "LINEERROR" and text:
+            line_errors.append(text)
+
+    if line_errors or result.errors or result.exceptions:
+        raise TallyRequestError(
+            "TallyPrime rejected the write.",
+            detail="; ".join(line_errors)
+            or f"{result.errors} error(s), {result.exceptions} exception(s) reported by Tally.",
+        )
+    if not saw_counter:
+        raise TallyXMLParseError(
+            "TallyPrime's response to the write did not contain an import result.",
+        )
+    if result.created + result.altered == 0:
+        raise TallyRequestError(
+            "TallyPrime accepted the request but did not create anything.",
+            detail=f"ignored={result.ignored}, combined={result.combined}. The object may "
+            "already exist or be a duplicate.",
+        )
+    return result

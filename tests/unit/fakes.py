@@ -27,12 +27,21 @@ class FakeTallyConnection:
 
     sent_requests: list[bytes] = field(default_factory=list)
     fail_with: Exception | None = None
+    import_fixture: str = "import_success_response.xml"
+
+    @property
+    def import_requests(self) -> list[bytes]:
+        return [r for r in self.sent_requests if b"<TALLYREQUEST>Import Data<" in r]
 
     def send(self, xml_body: bytes) -> TallyResponse:
         self.sent_requests.append(xml_body)
         if self.fail_with is not None:
             raise self.fail_with
         root = fromstring(xml_body)
+        if root.findtext("HEADER/TALLYREQUEST") == "Import Data":
+            return TallyResponse(
+                raw_bytes=load_fixture(self.import_fixture), elapsed_ms=1.0, status_code=200
+            )
         collection = root.find(".//COLLECTION")
         native_type = collection.findtext("TYPE") if collection is not None else None
         fixture_name = _TYPE_TO_FIXTURE.get(native_type or "")

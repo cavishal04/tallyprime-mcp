@@ -1,6 +1,6 @@
 # TallyPrime MCP
 
-**Read-only [MCP](https://modelcontextprotocol.io) server that lets AI assistants (Claude Desktop, Cursor, and other MCP clients) query a TallyPrime installation running on your own computer.**
+**[MCP](https://modelcontextprotocol.io) server that lets AI assistants (Claude Desktop, Cursor, and other MCP clients) query — and, if you opt in, write to — a TallyPrime installation running on your own computer.**
 
 Everything stays local: this server talks to TallyPrime's HTTP-XML gateway on `127.0.0.1`, and it never sends your accounting data to any server operated by this project.
 
@@ -11,7 +11,8 @@ Everything stays local: this server talks to TallyPrime's HTTP-XML gateway on `1
 ## Features
 
 - **13 read-only tools** covering companies, ledgers, vouchers, trial balance, P&L, balance sheet, receivables, payables, and stock/inventory.
-- **Nothing can write to Tally.** There is no `execute_tally_xml`-style escape hatch, and no tool can create, edit, or delete anything — see [Security](#security).
+- **Read-only by default.** Out of the box nothing can write to Tally, and there is no `execute_tally_xml`-style escape hatch.
+- **Opt-in, two-step writes.** Set `TALLY_READ_ONLY=false` to let the assistant create ledgers and accounting vouchers (Payment, Receipt, Journal, Contra, …). Every write is proposed first, shown to you as a preview, and only sent to Tally after an explicit `confirm_write` — see [Write access](#write-access-opt-in).
 - **Runs entirely on your machine.** No cloud account, no API keys, no external server.
 - **Clean, typed, consistent JSON** — never raw Tally XML tag soup — with amounts as numbers and dates as `YYYY-MM-DD`.
 - **Configurable, not hard-coded.** Host, port, timeouts, default company, and limits are all environment-variable driven.
@@ -90,7 +91,7 @@ All configuration is via environment variables (or a `.env` file in the working 
 | `TALLY_PORT` | `9000` | Gateway port |
 | `TALLY_TIMEOUT_SECONDS` | `30` | Per-request timeout |
 | `TALLY_DEFAULT_COMPANY` | *(none)* | Company to use when a tool call doesn't specify one |
-| `TALLY_READ_ONLY` | `true` | Always `true` in this release — see [Security](#security) |
+| `TALLY_READ_ONLY` | `true` | Set to `false` to enable the write tools — see [Write access](#write-access-opt-in) |
 | `TALLY_LOG_LEVEL` | `INFO` | Python logging level |
 | `TALLY_LOG_DIR` | *(none — stderr only)* | Directory for rotating log files |
 
@@ -134,11 +135,30 @@ Full parameter reference: [docs/tools.md](docs/tools.md) (this is also where the
 >
 > **AI:** "Here's the trial balance — total debits and credits both come to ₹18,42,000. The largest debit balances are HDFC Bank (₹6,10,000) and..."
 
+## Write access (opt-in)
+
+By default the server is read-only. To let your assistant record entries in Tally, set `TALLY_READ_ONLY=false` (and ideally `TALLY_DEFAULT_COMPANY`) in your MCP client config's `env` block. Four extra tools then appear:
+
+| Tool | What it does |
+|---|---|
+| `create_ledger` | **Proposes** a new ledger under an existing group, with an optional opening balance. Writes nothing. |
+| `create_voucher` | **Proposes** an accounting voucher (Payment, Receipt, Journal, Contra, Sales/Purchase in accounting mode) from balanced debit/credit lines. Writes nothing. |
+| `confirm_write` | Sends a previously proposed change to Tally. |
+| `cancel_write` | Discards a proposed change. |
+
+> **You:** "Record today's ₹5,000 office rent paid from HDFC Bank."
+>
+> **AI:** "Here's the voucher I'd create: Payment, 2026-04-01, Dr Office Rent ₹5,000 / Cr HDFC Bank ₹5,000. Shall I post it?"
+>
+> **You:** "Yes." → AI calls `confirm_write` → voucher created in Tally.
+
+Safeguards: proposals are validated against the live company first (ledgers and groups must exist, debits must equal credits, the company must be loaded); the exact XML that was previewed is what gets sent; confirmations are single-use and expire after 10 minutes; every proposal, commit, failure, and cancellation is written to the local audit log; and nothing can alter or delete existing Tally data. Because the AI itself calls `confirm_write`, keep your MCP client's per-tool approval prompt switched on for it.
+
 ## Security
 
 Read [SECURITY.md](SECURITY.md) for the full threat model. In short:
 
-- Every tool is **read-only**. No tool can create, modify, or delete Tally data.
+- **Read-only by default.** Writes require `TALLY_READ_ONLY=false`, are limited to *creating* ledgers and vouchers, and always go through a preview → confirm step. No tool can modify or delete existing Tally data.
 - There is **no generic XML-execution tool**.
 - The server binds to `127.0.0.1` by default and is never meant to be exposed to the internet.
 - All input is validated (dates, limits, request size) before being sent to Tally.
@@ -164,7 +184,7 @@ See [docs/development.md](docs/development.md) for the full contributor setup.
 
 ## Testing
 
-- **Unit tests** (98 at last count) run against hand-built mock XML fixtures shaped to match TallyPrime's documented request/response patterns — they verify this project's own request-building, parsing, and business logic, but **do not** verify that a real TallyPrime installation responds exactly this way.
+- **Unit tests** (125 at last count) run against hand-built mock XML fixtures shaped to match TallyPrime's documented request/response patterns — they verify this project's own request-building, parsing, and business logic, but **do not** verify that a real TallyPrime installation responds exactly this way.
 - **Integration tests** (`tests/integration/`) are written to run against a real, locally-running TallyPrime instance, but are **skipped by default** (including in CI) because no TallyPrime installation was available in this project's development environment. Run them yourself with `TALLYPRIME_MCP_RUN_INTEGRATION=1 pytest tests/integration -v` once you have TallyPrime open locally, and please report back via an issue with what did/didn't work for your version.
 
 If you *do* have TallyPrime available and something in `tools.md`'s "verify against a live instance" notes turns out wrong, a bug report (or PR) with the corrected field name is one of the most valuable contributions you can make right now.
@@ -176,7 +196,9 @@ Contributions are very welcome — see [CONTRIBUTING.md](CONTRIBUTING.md), espec
 ## Roadmap
 
 - [ ] Verify all XML field names against a real TallyPrime installation (multiple versions)
-- [ ] Write operations (`create_payment`, `create_receipt`, `create_sales_voucher`, ...), gated behind the confirmation workflow already scaffolded in `security/confirmation.py` — **not started**, and will not ship without explicit user confirmation per write
+- [x] Opt-in write operations (`create_ledger`, `create_voucher`) behind a preview → confirm workflow
+- [ ] Inventory vouchers (stock items in Sales/Purchase invoices), GST details on ledgers
+- [ ] Verify write XML against a real TallyPrime installation
 - [ ] Cost centre / godown-aware reporting
 - [ ] GST-specific reports
 - [ ] Optional local caching layer for large ledgers

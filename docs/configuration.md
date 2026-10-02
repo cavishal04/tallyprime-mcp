@@ -27,7 +27,8 @@ All variables are prefixed `TALLY_`.
 
 | Variable | Type | Default | Notes |
 |---|---|---|---|
-| `TALLY_READ_ONLY` | bool | `true` | Always effectively `true` in this release — see [SECURITY.md](../SECURITY.md#write-operations--deliberately-not-implemented). Reserved for future use once write operations exist. |
+| `TALLY_READ_ONLY` | bool | `true` | Set to `false` to register the write tools (`create_ledger`, `create_voucher`, `confirm_write`, `cancel_write`). See [SECURITY.md](../SECURITY.md#write-operations--opt-in-two-step). |
+| `TALLY_WRITE_CONFIRMATION_TTL_SECONDS` | int | `600` | How long a proposed write can be confirmed before it expires (1–3600). |
 
 ## Limits (defence in depth)
 

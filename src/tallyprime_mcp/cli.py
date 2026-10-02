@@ -64,7 +64,7 @@ def _cmd_config(_args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="tallyprime-mcp",
-        description="MCP server for read-only access to a local TallyPrime installation.",
+        description="MCP server for access to a local TallyPrime installation (read-only by default).",
     )
     parser.add_argument("--version", action="store_true", help="Print the version and exit.")
 

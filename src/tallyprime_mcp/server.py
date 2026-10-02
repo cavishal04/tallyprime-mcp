@@ -1,8 +1,8 @@
 """TallyPrime MCP server application.
 
 Builds a :class:`~mcp.server.fastmcp.FastMCP` instance, wires up the shared
-:class:`~tallyprime_mcp.tally.client.TallyClient`, registers all read-only
-tools/resources/prompts, and runs the server over stdio (the transport
+:class:`~tallyprime_mcp.tally.client.TallyClient`, registers all tools/resources/prompts
+(write tools only when ``TALLY_READ_ONLY=false``), and runs the server over stdio (the transport
 every current MCP desktop client — Claude Desktop, Cursor, etc. — expects
 for locally-run servers).
 """
@@ -25,18 +25,30 @@ if TYPE_CHECKING:
 logger = get_logger("server")
 
 _INSTRUCTIONS = """\
-TallyPrime MCP gives you read-only access to a local TallyPrime installation.
+TallyPrime MCP gives you access to a local TallyPrime installation.
 
 - All data comes from TallyPrime running on the user's own computer. Nothing
   is sent to any third-party server operated by this project.
-- Every tool here is read-only. There is no tool that can create, modify, or
-  delete anything in Tally.
-- If a company isn't specified and a default company is configured on the
+{write_policy}- If a company isn't specified and a default company is configured on the
   server, that default is used; otherwise pass an explicit company name
   (call list_companies first if you don't know it).
 - Dates are always ISO format: YYYY-MM-DD.
 - If any tool call fails unexpectedly, call test_connection first to check
   whether TallyPrime is reachable at all.
+"""
+
+_READ_ONLY_POLICY = """\
+- Every tool here is read-only. There is no tool that can create, modify, or
+  delete anything in Tally.
+"""
+
+_WRITE_POLICY = """\
+- Writes are enabled, and always take two steps. create_ledger and
+  create_voucher only PROPOSE a change and return a preview plus a
+  confirmation_id; nothing is written yet. Show the user the preview and
+  call confirm_write only after they explicitly approve that specific
+  change. Never confirm a write the user has not approved. If they decline,
+  call cancel_write. Existing data can never be altered or deleted.
 """
 
 
@@ -56,7 +68,9 @@ def build_server(settings: TallySettings | None = None) -> tuple[FastMCP, TallyC
 
     mcp = FastMCP(
         name="tallyprime-mcp",
-        instructions=_INSTRUCTIONS,
+        instructions=_INSTRUCTIONS.format(
+            write_policy=_READ_ONLY_POLICY if settings.read_only else _WRITE_POLICY
+        ),
     )
     register_tools(mcp, client)
     register_resources(mcp, client)
