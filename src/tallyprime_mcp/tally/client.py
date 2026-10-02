@@ -18,9 +18,11 @@ from tallyprime_mcp.tally.connection import TallyConnection
 from tallyprime_mcp.tally.exceptions import TallyCompanyNotFoundError, TallyRequestError
 from tallyprime_mcp.tally.xml_builder import StaticVariables, build_collection_request
 from tallyprime_mcp.tally.xml_parser import (
+    ImportResult,
     TallyRecord,
     check_for_tally_error,
     extract_records,
+    parse_import_result,
     parse_xml,
 )
 
@@ -30,10 +32,10 @@ logger = get_logger("tally.client")
 class TallyClient:
     """Synchronous client for TallyPrime's local HTTP-XML gateway.
 
-    All methods are read-only: none of them can create, alter, or delete
-    Tally data. See :mod:`tallyprime_mcp.security.permissions` for the
-    (currently trivial, always-deny) write-permission gate that any future
-    write method would have to pass through.
+    Every method except :meth:`import_data` is read-only. ``import_data``
+    is only ever called from :mod:`tallyprime_mcp.services.write_service`,
+    after the write-permission gate and the user-confirmation step in
+    :mod:`tallyprime_mcp.security` have both passed.
     """
 
     def __init__(self, settings: TallySettings, connection: TallyConnection | None = None) -> None:
@@ -240,3 +242,13 @@ class TallyClient:
         if search:
             records = [r for r in records if search.lower() in (r.name or "").lower()]
         return records
+
+    # -- writes ------------------------------------------------------------------
+
+    def import_data(self, request_xml: bytes) -> ImportResult:
+        """Send a pre-built ``Import Data`` request and return Tally's result.
+
+        Raises :class:`TallyRequestError` if Tally reported any error.
+        """
+        response = self._connection.send(request_xml)
+        return parse_import_result(parse_xml(response.raw_bytes))
