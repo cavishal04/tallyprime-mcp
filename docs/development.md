@@ -27,8 +27,8 @@ The layering rule of thumb:
 - `mcp/` — registers tools/resources/prompts on a `FastMCP` instance,
   translating parameters and catching errors. Thin — delegates to
   `services/` for anything non-trivial.
-- `security/` — the write-permission gate and audit logging. Nothing here
-  talks to Tally directly.
+- `security/` — the write-permission gate, the pending-write confirmation
+  store, and audit logging. Nothing here talks to Tally directly.
 
 Keeping these separate means you can, for example, test the entire trial
 balance computation (`tests/unit/test_services.py`) without spinning up

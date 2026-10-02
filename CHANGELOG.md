@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Opt-in write support, enabled with `TALLY_READ_ONLY=false` (default remains read-only). Adds `create_ledger` and `create_voucher` (accounting vouchers from balanced debit/credit lines), which only propose a change and return a preview, plus `confirm_write` and `cancel_write`.
+- Writes are validated against the live company before preview (company loaded, ledgers/groups exist, no duplicate ledger, debits equal credits), are single-use and expire after `TALLY_WRITE_CONFIRMATION_TTL_SECONDS` (default 600), send exactly the previewed XML, and are audit-logged at every step.
+- `Import Data` XML builders and an import-result parser that surfaces Tally's `LINEERROR`/error counters.
+
+### Changed
+
+- `WritePermission.check()` now allows `create_ledger` and `create_voucher` when `read_only` is false; every other operation is still denied.
+
 ## [0.1.0] - Unreleased
 
 Initial alpha release.

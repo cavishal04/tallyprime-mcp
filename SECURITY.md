@@ -37,25 +37,25 @@ TallyPrime MCP is a local bridge: it runs on the same machine as TallyPrime (or 
 | Unbounded memory use from a huge or malicious response | `TallyConnection` streams the response and aborts once `TALLY_MAX_RESPONSE_BYTES` is exceeded, rather than buffering unboundedly. |
 | Oversized/abusive outgoing requests | `TallyConnection` rejects requests larger than `TALLY_MAX_REQUEST_BYTES` before making any network call. |
 | Hung requests (Tally showing a blocking dialog, network issue) | Explicit connect and total timeouts on every request; no request can hang indefinitely. |
-| An AI agent trying to modify/delete Tally data | There is currently **no write capability at all** — not gated behind a flag, not reachable through any tool, full stop. See "Write operations" below. |
+| An AI agent trying to modify/delete Tally data | Off by default: with `TALLY_READ_ONLY=true` no write tool is registered. When enabled, only *creating* ledgers and vouchers is possible, always via preview → `confirm_write`; nothing can alter or delete existing data. See "Write operations" below. |
 | An AI agent trying to run arbitrary Tally XML/commands | There is no generic "execute this XML" tool. The optional `debug_raw_xml` tool (off by default, see below) can only issue the same fixed, read-only collection queries the normal tools already use — it cannot be given arbitrary XML or an arbitrary request type. |
 | Leaking secrets/credentials into logs | The logging pipeline redacts anything matching common secret patterns (`password=`, `token:`, `api_key=`, etc.) before it's written anywhere. In practice this project has no credentials to leak today (see "No authentication" below), but the redaction stays in place defensively for whatever configuration surface comes later. |
 | Leaking Python internals/stack traces to the AI client | Every MCP tool is wrapped so that known TallyPrime errors surface their clean, human-readable message, and any *unexpected* exception is logged locally (with full traceback) and reported to the client only as a generic internal-error message. |
 | Accidentally sending accounting data to a third party | This project makes exactly one kind of outgoing network call: to the TallyPrime host/port you configured. There is no telemetry, no update-check phone-home, no analytics. |
 
-### Write operations — deliberately not implemented
+### Write operations — opt-in, two-step
 
-TallyPrime MCP v0.1.0 is **read-only** by design, not by an easily-flipped configuration switch:
+TallyPrime MCP is **read-only by default**. Writes are available only when the operator sets `TALLY_READ_ONLY=false`:
 
-- `TallySettings.read_only` defaults to `true`.
-- `security/permissions.py`'s `WritePermission.check()` **always returns `allowed=False`**, even if `read_only` were somehow set to `false` — see `test_write_still_denied_even_if_read_only_flag_flipped`.
-- No MCP tool that could call such a permission check exists yet.
+- With `read_only=true` (default), the write tools are not even registered, and `WritePermission.check()` denies every write.
+- With `read_only=false`, `WritePermission.check()` allows only `create_ledger` and `create_voucher`. Alter, delete, cancel, and arbitrary-XML operations do not exist.
+- `create_ledger` / `create_voucher` **never write**. They validate the request against the live company (company loaded, referenced ledgers/groups exist, ledger name not already taken, debits equal credits, text length limits), build the exact import XML, and park it in an in-memory store, returning a preview and a `confirmation_id`.
+- Only `confirm_write(confirmation_id)` sends anything to Tally, and it sends the stored XML byte-for-byte, so what was previewed is what gets written. Confirmations are single-use, expire after `TALLY_WRITE_CONFIRMATION_TTL_SECONDS` (default 600), and are discarded on restart.
+- Writes must target an explicit company (`company` argument or `TALLY_DEFAULT_COMPANY`); they never fall back to whichever company happens to be active in Tally.
+- Every proposal, commit, failure, and cancellation is written to the local audit log (`tallyprime_mcp.audit`).
+- All user-supplied text is placed into XML via `ElementTree`, which escapes it — narrations or names cannot inject extra XML elements.
 
-The architecture is *prepared* for future write tools (`create_payment`, `create_receipt`, etc. — see `security/confirmation.py` for the intended confirm-before-execute flow), but none are wired up, and none will ship without:
-
-1. Explicit, per-call user confirmation (not just a config flag).
-2. Full parameter validation against a strict schema.
-3. An audit log entry recording what was requested, confirmed, and executed.
+**The limit of this design:** the confirmation step is a protocol between the server and the AI client. The server instructs the assistant to call `confirm_write` only after the user approves, and annotates `confirm_write` as a non-read-only tool so MCP clients prompt for it, but the server cannot itself verify that a human approved. Keep your MCP client's per-tool approval enabled for `confirm_write`, and only enable writes for assistants and companies you're comfortable with. Take a Tally backup before first use.
 
 ### No authentication between this server and TallyPrime
 
@@ -67,7 +67,7 @@ TallyPrime's local HTTP-XML gateway does not support authentication for local co
 ### Known limitations
 
 - No TLS between this server and TallyPrime (matches TallyPrime's own gateway; there's no encryption to add on top of a protocol that doesn't support it without a separate reverse proxy).
-- No per-user access control within TallyPrime MCP itself — if the process can reach Tally, all read-only tools are available to whatever MCP client is talking to this server.
+- No per-user access control within TallyPrime MCP itself — if the process can reach Tally, all enabled tools are available to whatever MCP client is talking to this server.
 - The optional `debug_raw_xml` tool (disabled by default; enable with `TALLY_EXPOSE_RAW_XML_TOOL=true`) returns *unfiltered* XML for a small fixed set of request kinds, which could include more raw internal field names than the sanitized tool outputs. It's intended for local troubleshooting only — leave it off unless you're actively debugging a field-mapping issue.
 - This project cannot audit or control what your MCP *client* does with the data once returned (see the Privacy section of the README).
 

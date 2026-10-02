@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "tallyprime-mcp"
 version = "0.1.0"
-description = "An MCP server that lets AI assistants securely read data from a local TallyPrime installation."
+description = "An MCP server that lets AI assistants securely read (and, opt-in, write) data in a local TallyPrime installation."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
